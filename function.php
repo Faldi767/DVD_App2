@@ -62,6 +62,22 @@
 		    }
 		    ?>
 		    </div>
+		    <a class="left carousel-control" href="#myCarousel" data-slide="prev"><!-- left carousel-control Starts -->
+
+                    <span class="glyphicon glyphicon-chevron-left"> </span>
+
+                    <span class="sr-only"> Previous </span>
+
+                    </a><!-- left carousel-control Ends -->
+
+                    <a class="right carousel-control" href="#myCarousel" data-slide="next"><!-- right carousel-control Starts -->
+
+                    <span class="glyphicon glyphicon-chevron-right"> </span>
+
+                    <span class="sr-only"> Next </span>
+
+                    </a><!-- right carousel-control Ends -->
+
             </div>
         </div>
     </div>
@@ -314,5 +330,147 @@
 		    echo "0 results";
 		}
 		$conn->close();
+	}
+	function breadcrumb($text) {
+		?>
+		<div class="col-md-12">
+                <ul class="breadcrumb">
+                    <li><a href="index">Home</a></li>
+                    <li><?php echo $text; ?></li>
+                </ul>
+            </div>
+            <?php
+	}
+	function loadcategory() {
+		$conn = new mysqli($GLOBALS['servername'], $GLOBALS['username'], $GLOBALS['password'], $GLOBALS['dbname']);
+		// Check connection
+		if ($conn->connect_error) {
+		    die("Connection failed: " . $conn->connect_error);
+		} 
+
+		$sql = "SELECT * FROM tbl_product_category";
+		$result = $conn->query($sql);
+
+		if ($result->num_rows > 0) {
+			?>
+		<div class="col-md-3">
+                <div class="panel panel-default sidebar-menu">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Categories</h3>
+                    </div>
+                    <div class="panel-body">
+                        <ul class="nav nav-pills nav-stacked category-menu">
+                        	<?php
+                        	while($row = $result->fetch_assoc()) {
+                        		?>
+                            <li><a href="shop.php"><?php echo $row["cat_p_title"]; ?></a></li>
+                            <?php
+                        }
+                        ?>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <?php
+            } else {
+		    echo "0 results";
+		}
+		$conn->close();
+	}
+	function loadproductshop($pageno = 1) {
+		$no_of_records_per_page = 6;
+        $offset = ($pageno-1) * $no_of_records_per_page;
+		$conn = new mysqli($GLOBALS['servername'], $GLOBALS['username'], $GLOBALS['password'], $GLOBALS['dbname']);
+
+		$total_pages_sql = "SELECT COUNT(*) FROM tbl_product";
+        $result = mysqli_query($conn,$total_pages_sql);
+        $total_rows = mysqli_fetch_array($result)[0];
+        $total_pages = ceil($total_rows / $no_of_records_per_page);
+		// Check connection
+		if ($conn->connect_error) {
+		    die("Connection failed: " . $conn->connect_error);
+		} 
+
+		$sql = "SELECT * FROM tbl_product LIMIT $offset, $no_of_records_per_page";
+		$result = $conn->query($sql);
+
+		if ($result->num_rows > 0) {
+		?>
+		<div class="col-md-9">
+                <div class="box">
+                    <h1>Shop</h1>
+                    <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Tempora ab commodi at ea voluptatum odio aliquid, ex dolores ipsa accusantium vitae qui sint doloribus fugiat harum sunt atque itaque! Reiciendis!</p>    
+                </div>
+                <div class="row">
+                	<?php
+                	while($row = $result->fetch_assoc()) {
+                		?>
+                    <div class="col-md-4 col-sm-6 center-responsive">
+                        <div class="product">
+                            <a href="">
+                                <img src="admin/product_images/<?php echo $row["product_img1"]; ?>" class="img-responsive">
+                            </a>
+                            <div class="text">
+                                <h3>
+                                    <a href=""><?php echo $row["product_title"]; ?></a>
+                                </h3>
+                                <p class="price">
+                                    Rp.<?php echo $row["product_price"]; ?>
+                                </p>
+                                <p class="buttons">
+                                    <a href="details.php" class="btn btn-default">View Details</a>
+                                    <a href="details.php" class="btn btn-primary"><i class="fa fa-shopping-cart"></i>Add to Cart</a>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+           			<?php 
+           			} 
+           		?>
+           		</div>
+                <center>
+                    <ul class="pagination">
+                        <li class="<?php if(!isset($_GET["pageno"])){ echo 'disabled'; } ?>"><a href="index?page=shop">First Page</a></li>
+                        <?php
+                        for($i=1;$i <= $total_pages;$i++) {
+                        	?>
+                        	<li class="
+                        	<?php
+                        	if(!isset($_GET["pageno"]) && $i == 1) {
+                        		echo 'disabled';
+							} else {
+								if($_GET["pageno"] == $i) {
+									echo 'disabled';
+								}
+							}
+                        		?>
+                        	"><a href="<?php echo 'index?page=shop&pageno='.$i; ?>"><?php echo $i; ?></a></li>
+                        	<?php
+                    }
+                    ?>
+                        <li class="<?php if($_GET["pageno"] == $total_pages){ echo 'disabled'; } ?>"><a href="<?php echo 'index?page=shop&pageno='.$total_pages; ?>">Last Page</a></li>
+                    </ul>
+                </center>
+            <?php
+            } else {
+		    echo "0 results";
+		}
+		$conn->close();
+		?>
+		</div>
+		<?php
+	}
+	function loadshop() {
+		?>
+		<div id="content">
+        <div class="container">
+        <?php
+		breadcrumb("Shop");
+		loadcategory();
+		loadproductshop();
+		?>
+		</div>
+    	</div>
+    	<?php
 	}
 ?>

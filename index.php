@@ -6,8 +6,14 @@
     <?php 
         top(); 
         navbar();
-        slider();
-        loadhomeproduct();
+        if(!isset($_GET["page"])) {
+            slider();
+            loadhomeproduct();
+        } else {
+            if($_GET["page"] == "shop") {
+                loadshop();
+            }
+        }
         footer();
     ?>
 </body>
