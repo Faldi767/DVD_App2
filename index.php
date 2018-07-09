@@ -13,6 +13,9 @@
             if($_GET["page"] == "shop") {
                 loadshop();
             }
+			if($_GET["page"] == "detail") {
+				loaddetailshop($_GET["id"]);
+			}
         }
         footer();
     ?>

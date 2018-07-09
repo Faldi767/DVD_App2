@@ -127,7 +127,7 @@
 		    die("Connection failed: " . $conn->connect_error);
 		} 
 
-		$sql = "SELECT * FROM tbl_product";
+		$sql = "SELECT * FROM tbl_product ORDER BY id_product DESC LIMIT 4";
 		$result = $conn->query($sql);
 
 		if ($result->num_rows > 0) {
@@ -158,7 +158,7 @@
                         <h3><a href=""><?php echo $row["product_title"]; ?></a></h3>
                         <p class="price">Rp.<?php echo $row["product_price"]; ?></p>
                         <p class="buttons">
-                            <a href="" class="btn btn-default">View Details</a>
+                            <a href="index?page=detail&id=<?php echo $row["id_product"] ?>" class="btn btn-default">View Details</a>
                             <a href="" class="btn btn-primary">
                                 <i class="fa fa-shopping-cart"></i>
                                 Add to Cart
@@ -196,10 +196,10 @@
                 <div class="padding-nav">
                     <ul class="nav navbar-nav navbar-left">
                         <li class="active">
-                            <a href="index.php">Home</a>
+                            <a href="index">Home</a>
                         </li>
                         <li class="nav-item">
-                            <a href="shop.php">Shop</a>
+                            <a href="index?page=shop">Shop</a>
                         </li>
                         <li class="nav-item">
                             <a href="customer/my_account.php">My Account</a>
@@ -418,7 +418,7 @@
                                     Rp.<?php echo $row["product_price"]; ?>
                                 </p>
                                 <p class="buttons">
-                                    <a href="details.php" class="btn btn-default">View Details</a>
+                                    <a href="index?page=detail&id=<?php echo $row["id_product"]; ?>" class="btn btn-default">View Details</a>
                                     <a href="details.php" class="btn btn-primary"><i class="fa fa-shopping-cart"></i>Add to Cart</a>
                                 </p>
                             </div>
@@ -460,6 +460,159 @@
 		</div>
 		<?php
 	}
+	function loaddetailproduct($id) {
+		$conn = new mysqli($GLOBALS['servername'], $GLOBALS['username'], $GLOBALS['password'], $GLOBALS['dbname']);
+		// Check connection
+		if ($conn->connect_error) {
+			die("Connection failed: " . $conn->connect_error);
+		} 
+
+		$sql = "SELECT * FROM tbl_product WHERE id_product='$id'";
+		$result = $conn->query($sql);
+
+		if ($result->num_rows > 0) {
+			?>
+			<?php
+			// output data of each row
+			while($row = $result->fetch_assoc()) {
+				?>
+				<div class="row" id="productMain">
+                    <div class="col-md-6">
+                        <div id="mainImage">
+                            <div id="myCarousel" class="carousel slide" data-ride="carousel">
+                                <ol class="carousel-indicators">
+                                    <li data-target="#myCarousel" data-slide-to="0" class="active"></li>
+                                    <li data-target="#myCarousel" data-slide-to="1"></li>
+                                    <li data-target="#myCarousel" data-slide-to="2"></li>
+                                </ol>
+                                    <div class="carousel-inner">
+                                    <div class="item active">
+                                        <center>
+                                            <img src="admin/product_images/<?php echo $row["product_img1"]; ?>" class="img-responsive">
+                                        </center>
+                                    </div>
+                                    <div class="item">
+                                        <center>
+                                            <img src="admin/product_images/<?php echo $row["product_img2"]; ?>" class="img-responsive">
+                                        </center>
+                                    </div>
+									<div class="item">
+                                        <center>
+                                            <img src="admin/product_images/<?php echo $row["product_img3"]; ?>" class="img-responsive">
+                                        </center>
+                                    </div>
+                                </div>
+                                <a href="#myCarousel" class="left carousel-control" data-slide="prev">
+                                    <span class="glyphicon glyphicon-chevron-left"></span>
+                                    <span class="sr-only">Previous</span>
+                                </a>
+                                <a href="#myCarousel" class="right carousel-control" data-slide="next">
+                                    <span class="glyphicon glyphicon-chevron-right"></span>
+                                    <span class="sr-only">Next</span>
+                                </a>
+                            </div>
+                        </div>            
+                    </div>
+                    <div class="col-md-6">
+                        <div class="box">
+                            <h1 class="text-center"><?php echo $row["product_title"]; ?></h1>
+                            <form action="detail.php" method="post" class=""form-horizontal>
+                                <div class="form-group">
+                                    <label class="col-md-5 control-label" >Product Quantity</label>
+                                    <div class="col-md-7">
+                                        <select name="product_qty" class="form-control">
+                                            <option>1</option>
+                                            <option>2</option>
+                                            <option>3</option>
+                                            <option>4</option>
+                                            <option>5</option>
+                                            <option>6</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <p class="price">Rp.<?php echo $row["product_price"]; ?></p>
+                                <p class="text-center buttons">
+                                    <button class="btn btn-primary" type="submit">
+                                    <i class="fa fa-shopping-cart"></i>Add to Cart
+                                    </button>
+                                </p>
+                            </form>
+                        </div>
+                        <div class="row" id="thumbs">
+                            <div class="col-xs-4">
+                                <a href="#" class="thumb">
+                                    <img src="admin/product_images/<?php echo $row["product_img1"]; ?>" class="img-responsive">
+                                </a>
+                            </div>
+                            <div class="col-xs-4">
+                                <a href="#" class="thumb">
+                                    <img src="admin/product_images/<?php echo $row["product_img2"]; ?>" class="img-responsive">
+                                </a>
+                            </div>
+                            <div class="col-xs-4">
+                                <a href="#" class="thumb">
+                                    <img src="admin/product_images/<?php echo $row["product_img3"]; ?>" class="img-responsive">
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+				<div class="box" id="details">
+                    <p>
+                        <h4>Product Details</h4>
+                        <p><?php echo $row["product_desc"]; ?></p>
+                    </p>
+                </div>
+					<?php
+			}
+		} else {
+			echo "0 results";
+		}
+		$conn->close();
+	}
+	function loadsuggest() {
+		$conn = new mysqli($GLOBALS['servername'], $GLOBALS['username'], $GLOBALS['password'], $GLOBALS['dbname']);
+		// Check connection
+		if ($conn->connect_error) {
+			die("Connection failed: " . $conn->connect_error);
+		} 
+
+		$sql = "SELECT * FROM tbl_product ORDER BY id_product DESC LIMIT 3";
+		$result = $conn->query($sql);
+
+		if ($result->num_rows > 0) {
+			?>
+			<div id="row same-height-row">
+                    <div class="col-md-3 col-sm-6">
+                        <div class="box same-height headline">
+                            <h3 class="text-center">You also like these Products</h3>
+                        </div>
+                    </div>
+					<?php
+			// output data of each row
+			while($row = $result->fetch_assoc()) {
+				?>
+				<div class="center-responsive col-md-3 col-sm-6">
+                        <div class="product same-height">
+                            <a href="detail.php">
+                                <img src="admin/product_images/<?php echo $row["product_img1"];  ?>" class="img-responsive">
+                            </a>
+                            <div class="text">
+                                <h3><a href="detail.php"><?php echo $row["product_title"]; ?></a></h3>
+                                <p class="price">Rp.<?php echo $row["product_price"]; ?></p>
+                            </div>
+                        </div>
+                    </div>
+					<?php
+			}
+			?>
+			</div>
+			<?php
+		} else {
+			echo "0 results";
+		}
+		$conn->close();
+	}
 	function loadshop() {
 		?>
 		<div id="content">
@@ -472,5 +625,23 @@
 		</div>
     	</div>
     	<?php
+	}
+	function loaddetailshop($id = 0) {
+		?>
+		<div id="content">
+        <div class="container">
+		<?php 
+		breadcrumb("Shop");
+		loadcategory();
+		?>
+		<div class="col-md-9">
+		<?php
+		loaddetailproduct($id);
+		loadsuggest();
+		?>
+		</div>
+		</div>
+    	</div>
+		<?php
 	}
 ?>
