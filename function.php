@@ -3,6 +3,7 @@
 	$GLOBALS['username'] = "root";
 	$GLOBALS['password'] = "";
 	$GLOBALS['dbname'] = "dvd_store";
+	ob_start();
 	function home() {
 		include("header.php");
 	}
@@ -11,22 +12,37 @@
 		<div id="top">
         <div class="container">
             <div class="col-md-6 offer">
-                <a href="" class="btn btn-success btn-sm">Welcome Guest</a>
-                <a href="">Shopping cart total Rp.100.000, Total item 2</a>
+                <a href="" class="btn btn-success btn-sm">Welcome <?php echo (isset($_SESSION['login']) ? $_SESSION['nama'] : "Guest") ?></a>
+				<?php if(isset($_SESSION["login"])) {
+				?>
+                <a href="">Shopping cart total Rp.<?php totalPrice(); ?>, Total item <?php getcart(); ?></a>
+				<?php
+				}
+				?>
             </div>
             <div class="col-md-6">
                 <ul class="menu">
+					<?php
+					if(!isset($_SESSION['login'])) {
+					?>
                     <li>
-                        <a href="customer_register.php">Register</a>
+                        <a href="index?page=register">Register</a>
                     </li>
+					<?php
+					}
+					if(isset($_SESSION['login'])) {
+					?>
                     <li>
                         <a href="">My Account</a>
                     </li>
                     <li>
                         <a href="">Go To Cart</a>
                     </li>
+					<?php
+					}
+					?>
                     <li>
-                        <a href="">Login</a>
+                        <a href="<?php echo (isset($_SESSION['login']) ? "index?page=logout" : "index?page=login") ?>"><?php echo (isset($_SESSION['login']) ? "Logout" : "Login") ?></a>
                     </li>
                 </ul>
             </div>
@@ -158,8 +174,8 @@
                         <h3><a href=""><?php echo $row["product_title"]; ?></a></h3>
                         <p class="price">Rp.<?php echo $row["product_price"]; ?></p>
                         <p class="buttons">
-                            <a href="index?page=detail&id=<?php echo $row["id_product"] ?>" class="btn btn-default">View Details</a>
-                            <a href="" class="btn btn-primary">
+                            <a href="index?page=detail&id=<?php echo $row["id_product"]; ?>" class="btn btn-default">View Details</a>
+                            <a href="index?page=detail&id=<?php echo $row["id_product"]; ?>" class="btn btn-primary">
                                 <i class="fa fa-shopping-cart"></i>
                                 Add to Cart
                             </a>
@@ -177,6 +193,18 @@
 		    echo "0 results";
 		}
 		$conn->close();
+	}
+	function addtocart($id, $product, $quantity = 1) {
+		$conn = new mysqli($GLOBALS['servername'], $GLOBALS['username'], $GLOBALS['password'], $GLOBALS['dbname']);
+            if ($conn->connect_error) {
+                die("Connection failed: " . $conn->connect_error);
+            } 
+            $sql = "INSERT INTO tbl_cart (id_customer, id_product, quantity) VALUES ($id, $product, $quantity)";
+            if ($conn->query($sql) === TRUE) {
+                header("location:index?page=shop");
+            } else {
+                header("location:index?page=shop");
+            }
 	}
 	function navbar() { ?>
 		<div class="navbar navbar-default" id="navbar">
@@ -201,21 +229,29 @@
                         <li class="nav-item">
                             <a href="index?page=shop">Shop</a>
                         </li>
+						<?php
+						if(isset($_SESSION["login"])) {
+						?>
                         <li class="nav-item">
                             <a href="customer/my_account.php">My Account</a>
                         </li>
                         <li class="nav-item">
                             <a href="cart.php">Shopping Cart</a>
                         </li>
+						<?php
+						}
+						?>
                         <li class="nav-item">
                             <a href="contact.php">Contact Us</a>
                         </li>
                     </ul>
                 </div>
+				<?php if(isset($_SESSION["login"])) { ?>
                 <a class="btn btn-primary navbar-btn right" href="">
                     <i class="fa fa-shopping-cart"></i>
-                    <span>4 Items in cart</span>
+                    <span><?php getcart(); ?> Items in cart</span>
                 </a>
+				<?php } ?>
                 <div class="navbar-collapse collapse right">
                     <button class="btn navbar-btn btn-primary" type="button" data-toggle="collapse" data-target="#search">
                         <span class="sr-only">Toggle Search</span>
@@ -377,6 +413,42 @@
 		}
 		$conn->close();
 	}
+	function totalprice() {
+		$total=0;
+		$db = mysqli_connect($GLOBALS['servername'], $GLOBALS['username'], $GLOBALS['password'], $GLOBALS['dbname']);
+		$id = $_SESSION["id"];
+        $select_cart = "select * from tbl_cart where id_customer='$id'";
+        $run_cart = mysqli_query($db,$select_cart);
+        while($record=mysqli_fetch_array($run_cart)){
+        $id_product=$record['id_product'];
+        $quantity=$record['quantity'];
+        $get_price = "select * from tbl_product where id_product='$id_product'";
+        $run_price = mysqli_query($db,$get_price);
+        while($row_price = mysqli_fetch_array($run_price)){
+            $sub_total = $row_price['product_price'] * $quantity;
+            $total += $sub_total;
+        }
+        }
+        echo $total;
+	}
+	function getcart() {
+		$conn = new mysqli($GLOBALS['servername'], $GLOBALS['username'], $GLOBALS['password'], $GLOBALS['dbname']);
+		// Check connection
+		if ($conn->connect_error) {
+			die("Connection failed: " . $conn->connect_error);
+		} 
+		$id = $_SESSION["id"];
+		$sql = "SELECT * FROM tbl_cart WHERE id_customer=$id";
+		$result = $conn->query($sql);
+
+		if ($result->num_rows > 0) {
+			// output data of each row
+			echo $result->num_rows;
+		} else {
+			echo "0";
+		}
+		$conn->close();
+	}
 	function loadproductshop($pageno = 1) {
 		$no_of_records_per_page = 6;
         $offset = ($pageno-1) * $no_of_records_per_page;
@@ -419,7 +491,7 @@
                                 </p>
                                 <p class="buttons">
                                     <a href="index?page=detail&id=<?php echo $row["id_product"]; ?>" class="btn btn-default">View Details</a>
-                                    <a href="details.php" class="btn btn-primary"><i class="fa fa-shopping-cart"></i>Add to Cart</a>
+                                    <a href="index?page=detail&id=<?php echo $row["id_product"]; ?>" class="btn btn-primary"><i class="fa fa-shopping-cart"></i>Add to Cart</a>
                                 </p>
                             </div>
                         </div>
@@ -430,7 +502,7 @@
            		</div>
                 <center>
                     <ul class="pagination">
-                        <li class="<?php if(!isset($_GET["pageno"])){ echo 'disabled'; } ?>"><a href="index?page=shop">First Page</a></li>
+                        <li class="<?php if(!isset($_GET["pageno"]) || $_GET["pageno"] == 1){ echo 'disabled'; } ?>"><a href="index?page=shop">First Page</a></li>
                         <?php
                         for($i=1;$i <= $total_pages;$i++) {
                         	?>
@@ -459,6 +531,257 @@
 		?>
 		</div>
 		<?php
+	}
+	function loadcart() {
+		$conn = new mysqli($GLOBALS['servername'], $GLOBALS['username'], $GLOBALS['password'], $GLOBALS['dbname']);
+		// Check connection
+		if ($conn->connect_error) {
+			die("Connection failed: " . $conn->connect_error);
+		}
+		$GLOBALS["total"] = 0;
+		$id = $_SESSION["id"];
+		$sql = "SELECT * FROM tbl_cart, tbl_product WHERE tbl_cart.id_product=tbl_product.id_product AND id_customer=$id";
+		$result = $conn->query($sql);
+
+		if ($result->num_rows > 0) {
+			// output data of each row
+			?>
+			<div class="box">
+                    <form action="index?page=updatecart" method="post" enctype="multipart-from-data">
+                        <h1>Shopping Cart</h1>
+                        <p class="text-muted">You currently have <?php getcart(); ?> item(s) on your cart</p>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th colspan="2">Product</th>
+                                        <th>Quantity</th>
+                                        <th>Unit Price</th>
+                                        <th colspan="1">Delete</th>
+                                        <th colspan="2">Sub Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+								<?php
+			while($row = $result->fetch_assoc()) {
+				$subtotal = $row["product_price"] * $row["quantity"];
+				?>
+									<tr>
+                                        <td>
+                                            <img src="admin/product_images/<?php echo $row["product_img1"]; ?>" class="img-responsive"> 
+                                        </td>
+                                        <td>
+                                            <a href=""><?php echo $row["product_title"]; ?></a>
+                                        </td>
+                                        <td>
+                                            <p><?php echo $row["quantity"]; ?></p>
+                                        </td>
+                                        <td>
+                                            <p>Rp.<?php echo $row["product_price"]; ?></p>
+                                        </td>
+                                        <td>
+                                            <input type="checkbox" name="remove[]" value="<?php echo $row["id_cart"]; ?>">
+                                        </td>
+                                        <td>
+                                            <p>Rp.<?php echo $subtotal; ?></p>
+                                        </td>
+                                    </tr>
+									<?php
+									$GLOBALS["total"] += $subtotal;
+			}
+			?>
+			</tbody>
+                                <tfoot>
+                                    <tr>
+                                        <th colspan="5">Total</th>
+                                        <th colspan="2">Rp.<?php echo $GLOBALS["total"]; ?></th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                        <div class="box-footer">
+                            <div class="pull-left">
+                                <a href="index.php" class="btn btn-default">
+                                    <i class="fa fa-chevron-left"></i> Continue Shopping
+                                </a>
+                            </div>
+                            <div class="pull-right">
+                                <button class="btn btn-default" type="submit" name ="update" value="Update Cart">
+                                    <i class="fa fa-refresh"></i> Update Cart
+                                </button>
+                                <a href="checkout.php" class="btn btn-primary">
+                                    Process to Checkout
+                                    <i class="fa fa-chevron-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+				<?php
+		} else {
+			?>
+			<div class="box">
+                    <form action="index?page=updatecart" method="post" enctype="multipart-from-data">
+                        <h1>Shopping Cart</h1>
+                        <p class="text-muted">You currently have <?php getcart(); ?> item(s) on your cart</p>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th colspan="2">Product</th>
+                                        <th>Quantity</th>
+                                        <th>Unit Price</th>
+                                        <th colspan="1">Delete</th>
+                                        <th colspan="2">Sub Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+								</tbody>
+                                <tfoot>
+                                    <tr>
+                                        <th colspan="5">Total</th>
+                                        <th colspan="2">Rp.<?php echo $GLOBALS["total"]; ?></th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                        <div class="box-footer">
+                            <div class="pull-left">
+                                <a href="index.php" class="btn btn-default">
+                                    <i class="fa fa-chevron-left"></i> Continue Shopping
+                                </a>
+                            </div>
+                            <div class="pull-right">
+                                <button class="btn btn-default" type="submit" name ="update" value="Update Cart">
+                                    <i class="fa fa-refresh"></i> Update Cart
+                                </button>
+                                <a href="checkout.php" class="btn btn-primary">
+                                    Process to Checkout
+                                    <i class="fa fa-chevron-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+				<?php
+		}
+		$conn->close();
+		?>
+                
+                  
+			<?php
+	}
+	function deletecart() {
+		if(isset($_POST["remove"])) {
+			$conn = new mysqli($GLOBALS['servername'], $GLOBALS['username'], $GLOBALS['password'], $GLOBALS['dbname']);
+			// Check connection
+			if ($conn->connect_error) {
+				die("Connection failed: " . $conn->connect_error);
+			} 
+			
+			// sql to delete a record
+			$sql = 'DELETE FROM tbl_cart WHERE id_cart IN(' . implode(',', $_POST['remove']) . ')';
+
+			if ($conn->query($sql) === TRUE) {
+				header("Location: index?page=cart");
+			} else {
+				echo "Error deleting record: " . $conn->error;
+			}
+
+			$conn->close();
+		}
+	}
+	function cart() { ?>
+		<div id="content">
+        <div class="container">
+        <?php
+		breadcrumb("My Account");
+		?>
+            
+            <div class="col-md-9" id="cart">
+                <?php loadcart(); ?>
+                <?php loadsuggestcart(); ?>
+            </div>
+            <div class="col-md-3">
+                <div class="box" id="order-summary">
+                    <div class="box-header">
+                        <h3>Order Summary</h3>
+                    </div>
+                    <p class="text-muted">
+                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Explicabo esse accusantium temporibus eius asperiores ullam consequuntur perspiciatis expedita veritatis, corrupti debitis alias, tempora impedit suscipit minima eos! Amet, accusantium cum?
+                    </p>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <tbody>
+                                <tr>
+                                    <td>Order Subtotal</td>
+                                    <th>Rp.<?php echo $GLOBALS["total"]; ?></th>
+                                </tr>
+                                <tr>
+                                    <td>Shipping and handling</td>
+                                    <th>Rp.0</th>
+                                </tr>
+                                <tr>
+                                    <td>Tax</td>
+                                    <td>Rp.0</td>
+                                </tr>
+                                <tr class="total">
+                                    <td>Total </td>
+                                    <th>Rp.<?php echo $GLOBALS["total"]; ?></th>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+		</div>
+		<?php
+	}
+	function loadsuggestcart() {
+		$conn = new mysqli($GLOBALS['servername'], $GLOBALS['username'], $GLOBALS['password'], $GLOBALS['dbname']);
+		// Check connection
+		if ($conn->connect_error) {
+			die("Connection failed: " . $conn->connect_error);
+		} 
+
+		$sql = "SELECT * FROM tbl_product ORDER BY id_product DESC LIMIT 3";
+		$result = $conn->query($sql);
+
+		if ($result->num_rows > 0) {
+			// output data of each row
+			?>
+			<div id="row same-height-row">
+                    <div class="col-md-3 col-sm-6">
+                        <div class="box same-height headline">
+                            <h3 class="text-center">You also like these Products</h3>
+                        </div>
+                    </div>
+					<?php
+			while($row = $result->fetch_assoc()) {
+				?>
+				<div class="center-responsive col-md-3 col-sm-6">
+                        <div class="product same-height">
+                            <a href="detail.php">
+                                <img src="admin/product_images/<?php echo $row["product_img1"]; ?>" class="img-responsive">
+                            </a>
+                            <div class="text">
+                                <h3><a href="detail.php"><?php echo $row["product_title"]; ?></a></h3>
+                                <p class="price">Rp.<?php echo $row["product_price"]; ?></p>
+                            </div>
+                        </div>
+                    </div>
+					<?php
+			}
+			?>
+			</div>
+			<?php
+		} else {
+			echo "0 results";
+		}
+		$conn->close();
+		?>
+				<?php
 	}
 	function loaddetailproduct($id) {
 		$conn = new mysqli($GLOBALS['servername'], $GLOBALS['username'], $GLOBALS['password'], $GLOBALS['dbname']);
@@ -516,7 +839,7 @@
                     <div class="col-md-6">
                         <div class="box">
                             <h1 class="text-center"><?php echo $row["product_title"]; ?></h1>
-                            <form action="detail.php" method="post" class=""form-horizontal>
+                            <form action="index?page=addcart" method="post" class=""form-horizontal>
                                 <div class="form-group">
                                     <label class="col-md-5 control-label" >Product Quantity</label>
                                     <div class="col-md-7">
@@ -528,6 +851,7 @@
                                             <option>5</option>
                                             <option>6</option>
                                         </select>
+										<input type="hidden" name="idproduct" value="<?php echo $row["id_product"]; ?>">
                                     </div>
                                 </div>
                                 <p class="price">Rp.<?php echo $row["product_price"]; ?></p>
@@ -613,14 +937,14 @@
 		}
 		$conn->close();
 	}
-	function loadshop() {
+	function loadshop($page = 1) {
 		?>
 		<div id="content">
         <div class="container">
         <?php
 		breadcrumb("Shop");
 		loadcategory();
-		loadproductshop();
+		loadproductshop($page);
 		?>
 		</div>
     	</div>
@@ -643,5 +967,281 @@
 		</div>
     	</div>
 		<?php
+	}
+	function loadlogin() {
+		?>
+		<div id="content">
+        <div class="container">
+        <?php
+		breadcrumb("Login");
+		loadcategory();
+		?>
+		<div class="col-md-9">
+                <div class="box">
+                    <div class="box-header">
+                        <center>
+                            <h2>Login</h2>
+                        </center>                    
+                    </div>
+                    <form action="index?page=processlogin" method="post" enctype="multipart/form-data">
+                        <div class="form-group">
+                            <label>Customer Email</label>
+                            <input type="text" class="form-control" name="c_email" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Customer Password</label>
+                            <input type="password" class="form-control" name="c_pass" required>
+                        </div>
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary" name="login">
+                                <i class="fa fa-user-md"></i> Login           
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+		</div>
+    	</div>
+    	<?php
+	}
+	function loadregister() {
+		?>
+		<div id="content">
+        <div class="container">
+        <?php
+		breadcrumb("Login");
+		loadcategory();
+		?>
+		<div class="col-md-9">
+                <div class="box">
+                    <div class="box-header">
+                        <center>
+                            <h2>Register a New Account</h2>
+                        </center>                    
+                    </div>
+                    <form action="index?page=processregister" method="post" enctype="multipart/form-data">
+                        <div class="form-group">
+                            <label>Customer Name</label>
+                            <input type="text" class="form-control" name="c_name" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Customer Email</label>
+                            <input type="text" class="form-control" name="c_email" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Customer Password</label>
+                            <input type="password" class="form-control" name="c_pass" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Country</label>
+                            <input type="text" class="form-control" name="c_country" required>
+                        </div>
+                        <div class="form-group">
+                            <label>City</label>
+                            <input type="text" class="form-control" name="c_city" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Phone Number</label>
+                            <input type="text" class="form-control" name="c_contact" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Address</label>
+                            <input type="text" class="form-control" name="c_address" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Image</label>
+                            <input type="file" class="form-control" name="c_image" required>
+                        </div>
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary" name="register">
+                                <i class="fa fa-user-md"></i> Register           
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+		</div>
+    	</div>
+    	<?php
+	}
+	function login($email, $password) {
+			$conn = new mysqli($GLOBALS['servername'], $GLOBALS['username'], $GLOBALS['password'], $GLOBALS['dbname']);
+            if ($conn->connect_error) {
+                die("Connection failed: " . $conn->connect_error);
+            } 
+            
+            $sql = "SELECT * FROM tbl_customer,tbl_role WHERE tbl_customer.id_role=tbl_role.id_role AND customer_email='$email' AND customer_password='$password'";
+            $result = $conn->query($sql);
+            
+            if ($result->num_rows > 0) {
+                while($row = $result->fetch_assoc()) {
+                    $_SESSION['login'] = true;
+                    $_SESSION["id"] = $row["id_customer"];
+                    $_SESSION["nama"] = $row["customer_name"];
+                    $_SESSION["email"] = $row["customer_email"];
+					$_SESSION["password"] = $row["customer_password"];
+					$_SESSION["country"] = $row["country"];
+					$_SESSION["city"] = $row["city"];
+                    $_SESSION["telp"] = $row["phone_number"];
+					$_SESSION["address"] = $row["address"];
+					$_SESSION["image"] = $row["image"];
+                    if($row["nama_role"] == "Admin") {
+                        $_SESSION['admin'] = true;
+                    } else {
+                        $_SESSION["admin"] = false;
+                    }
+                }
+                header("location: index");
+            } else {
+                header("location:index?page=login");
+            }
+        }
+        function logout() {
+            session_destroy();
+            header("location:index");
+        }
+	function register($nama, $email, $password, $country, $city, $phone, $address, $image) {
+			$conn = new mysqli($GLOBALS['servername'], $GLOBALS['username'], $GLOBALS['password'], $GLOBALS['dbname']);
+            if ($conn->connect_error) {
+                die("Connection failed: " . $conn->connect_error);
+            } 
+            $sql = "INSERT INTO tbl_customer (id_role, customer_name, customer_email, customer_password, country, city, phone_number, address, image) VALUES (1, '$nama', '$email', '$password', '$country', '$city', '$phone', '$address', '$image')";
+            if ($conn->query($sql) === TRUE) {
+                header("location:index");
+            } else {
+                header("location:index");
+            }
+        }
+	function loadinfoaccount() {
+		?>
+		<div class="col-md-3">
+                <div class="panel panel-default sidebar-menu">
+				<div class="panel-heading">
+					<center>
+						<img src="customer/customer_images/<?php echo $_SESSION["image"]; ?>" class="img-responsive">
+					</center>
+					<br>
+					<h3 align="center" class="panel-title">Name : <?php echo $_SESSION["nama"]; ?></h3>
+				</div>
+				<div class="panel-body">
+					<ul class="nav nav-pills nav-stacked">
+						<li class="<?php if(isset($_GET['my_orders'])){echo "active";} ?>">
+							<a href="my_account.php?my_orders">
+								<i class="fa fa-list"></i> My Orders
+							</a>
+						</li>
+						<li class="<?php if(isset($_GET['pay_offline'])){echo "active";} ?>">
+							<a href="my_account.php?pay_offline">
+								<i class="fa fa-bolt"></i> Pay Offline
+							</a>
+						</li>
+						<li class="<?php if(isset($_GET['edit_account'])){echo "active";} ?>">
+							<a href="index?page=account&editaccount">
+								<i class="fa fa-pencil"></i> Edit Account
+							</a>
+						</li>
+						<li class="<?php if(isset($_GET['change_pass'])){echo "active";} ?>">
+							<a href="index?page=account&changepass">
+								<i class="fa fa-user"></i> Change Password
+							</a>
+						</li>
+						<li>
+							<a href="index?page=logout">
+								<i class="fa fa-sign-out"></i> Log Out
+							</a>
+						</li>
+					</ul>
+				</div>
+			</div>
+			</div>
+			<?php
+	}
+	function loadeditaccount() {
+		?>
+		<h1>Edit Your Account</h1>
+		<form action="index?page=setaccount" method="post" enctype="multipart/form-data">
+			<div class="form-group">
+				<label>Customer Name :</label>
+				<input type="text" name="c_name" class="form-control" value="<?php echo $_SESSION["nama"]; ?>" required>
+			</div>
+			<div class="form-group">
+				<label>Customer Email :</label>
+				<input type="text" name="c_email" class="form-control" value="<?php echo $_SESSION["email"]; ?>" required>
+			</div>
+			<div class="form-group">
+				<label>Customer Country :</label>
+				<input type="text" name="c_country" class="form-control" value="<?php echo $_SESSION["country"]; ?>" required>
+			</div>
+			<div class="form-group">
+				<label>Customer City :</label>
+				<input type="text" name="c_city" class="form-control" value="<?php echo $_SESSION["city"]; ?>" required>
+			</div>
+			<div class="form-group">
+				<label>Customer Contact :</label>
+				<input type="text" name="c_contact" class="form-control" value="<?php echo $_SESSION["telp"]; ?>" required>
+			</div>
+			<div class="form-group">
+				<label>Customer Address :</label>
+				<input type="text" name="c_address" class="form-control" value="<?php echo $_SESSION["address"]; ?>" required>
+			</div>
+			<div class="form-group">
+				<label>Customer Image :</label>
+				<input type="file" name="c_image" class="form-control" required><br>
+				<img src="customer/customer_images/<?php echo $_SESSION["image"]; ?>" width="100" height="100" class="img-responsive">
+			</div>
+			<div class="text-center">
+				<button name="update" class="btn btn-primary">
+					<i class="fa fa-user-md"></i> Update Now
+				</button>
+			</div>
+		</form>
+		<?php
+	}
+	function loadchangepass() {
+		?>
+		<h1 align="center">Change Password</h1>
+		<form action="index?page=setpass" method="post" enctype="multipart/form-data">
+			<div class="form-group">
+				<label>Current Password</label>
+				<input type="password" name="old_pass" class="form-control" required>
+			</div>
+			<div class="form-group">
+				<label>New Password</label>
+				<input type="password" name="new_pass" class="form-control" required>
+			</div>
+			<div class="form-group">
+				<label>Confirm New Password</label>
+				<input type="password" name="c_new_pass" class="form-control" required>
+			</div>
+			<div class="text-center">
+				<button type="submit" name="submit" class="btn btn-primary">
+					<i class="fa fa-user-md"></i> Change Password
+				</button>
+			</div>
+		</form>
+		<?php
+	}
+	function loadaccount() {
+		?>
+		<div id="content">
+        <div class="container">
+        <?php
+		breadcrumb("My Account");
+		loadinfoaccount();
+		?>
+		<div class="col-md-9">
+                <div class="box">
+                    <?php 
+						if(isset($_GET["editaccount"])) {
+                        loadeditaccount();
+						} else if(isset($_GET["changepass"])) {
+							loadchangepass();
+						}
+                    ?>
+                </div>
+            </div>
+			</div>
+			</div>
+			<?php
 	}
 ?>

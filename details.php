@@ -21,7 +21,7 @@
             <div class="col-md-6">
                 <ul class="menu">
                     <li>
-                        a href="customer_register.php">Register</a>
+                        <a href="customer_register.php">Register</a>
                     </li>
                     <li>
                         <a href="">My Account</a>
