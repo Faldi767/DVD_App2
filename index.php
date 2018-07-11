@@ -5,6 +5,11 @@
 <body>
     <?php 
 		session_start();
+		if(isset($_SESSION["admin"])) {
+			if($_SESSION["admin"] == true) {
+				header("Location: admin/index.php");
+			}
+		}
         top(); 
         navbar();
         if(!isset($_GET["page"])) {

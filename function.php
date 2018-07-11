@@ -233,10 +233,10 @@
 						if(isset($_SESSION["login"])) {
 						?>
                         <li class="nav-item">
-                            <a href="customer/my_account.php">My Account</a>
+                            <a href="index?page=account">My Account</a>
                         </li>
                         <li class="nav-item">
-                            <a href="cart.php">Shopping Cart</a>
+                            <a href="index?page=cart">Shopping Cart</a>
                         </li>
 						<?php
 						}
