@@ -105,6 +105,53 @@
 					} else {
 						echo "Error updating record: " . $conn->error;
 					}
+					$conn->close();
+			}
+			else if($_GET["page"] == "processorder") {
+				$conn = new mysqli($GLOBALS['servername'], $GLOBALS['username'], $GLOBALS['password'], $GLOBALS['dbname']);
+				if ($conn->connect_error) {
+					die("Connection failed: " . $conn->connect_error);
+				} 
+				$id = $_SESSION["id"];
+				$status = "pending";
+				$invoice_no = mt_rand();
+				$select_cart = "select * from tbl_cart where id_customer='$id'";
+				$run_cart = $conn->query($select_cart);
+				while($row_cart = $run_cart->fetch_assoc()){
+					$product_id = $row_cart['id_product'];
+					$quantity = $row_cart['quantity'];
+					$get_product = "select * from tbl_product where id_product='$product_id'";
+					$run_product = $conn->query($get_product);
+					while($row_product = $run_product->fetch_assoc()){
+						$sub_total = $row_product['product_price']*$quantity;
+						$insert_order = "insert into tbl_order(id_customer,id_product,amount,invoice_no,quantity,order_date,order_status) values ('$id','$product_id','$sub_total','$invoice_no','$quantity',NOW(),'$status')";
+						$run_order = $conn->query($insert_order);
+						$delete_cart = "delete from tbl_cart where id_customer='$id'";
+						$run_delete = $conn->query($delete_cart);
+						if($run_order) { 
+						echo "<script>alert('Your order has been submited .Thank you')</script>";
+						header("Location: index?page=account&order");
+						}
+					}
+				}
+				$conn->close();
+			}
+			else if($_GET["page"] = "processpay") {
+							$conn = new mysqli($GLOBALS['servername'], $GLOBALS['username'], $GLOBALS['password'], $GLOBALS['dbname']);
+                            $update_id = $_POST["idorder"];
+                            $payment_mode = $_POST['payment_mode'];
+                            $ref_no = $_POST['ref_no'];
+                            $payment_date = $_POST['date'];
+                            $complete = "Complete";
+                            // bug 
+                            $insert_payment = "insert into tbl_payment (id_order,payment_mode,ref_no,payment_date) values ('$update_id','$payment_mode','$ref_no','$payment_date')";
+                            $run_payment = $conn->query($insert_payment);
+                            $update_order = "update tbl_order set order_status='$complete' where id_order='$update_id'";
+                            $run_order = $conn->query($update_order);
+                            if($run_order){
+                                echo "<script>alert('Pembayaran anda telah dimasukkan, pesanan akan diproses dalam waktu maksimal 24 jam. Terima kasih. ')</script>";
+                                header("Location: index?page=account&order");
+                            }
 			}
         }
         footer();

@@ -1221,6 +1221,133 @@
 		</form>
 		<?php
 	}
+	function loadcheckout() {
+		?>
+		<div class="box">
+			<h1 class="text-center">Payment Option</h1>
+			<p class="lead text-center">
+				<a href="index?page=processorder">Pay Offline</a>
+			</p>
+			<center>
+				<p class="lead">
+					<a href="">Pay Online with Paypal
+						<img src="images/paypal.png" width="400" height="300" class="img-responsive">
+					</a>
+				</p>
+			</center>
+		</div>
+		<?php
+	}
+	function loadorder() {
+		?>
+		<center>
+			<h1>My Orders</h1>
+			<p class="lead">Your order on one place.</p>
+			<p class="text-muted">Lorem ipsum dolor sit amet consectetur adipisicing elit. Quas sunt et reprehenderit enim amet sed fuga ex, praesentium illo eligendi aperiam eaque iure neque? Totam rerum assumenda exercitationem eum quaerat.</p>
+		</center>
+		<hr>
+		<div class="table-responsive">
+			<table class="table table-bordered table-hover">
+				<thead>
+					<tr>
+						<th>O N:</th>
+						<th>Due Amount:</th>
+						<th>Invoice No:</th>
+						<th>Qty:</th>
+						<th>Order Date:</th>
+						<th>Paid / Unpaid:</th>
+						<th>Status:</th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php
+						$conn = new mysqli($GLOBALS['servername'], $GLOBALS['username'], $GLOBALS['password'], $GLOBALS['dbname']);
+						$customer_id = $_SESSION['id'];
+						$get_orders = "select * from tbl_order where id_customer='$customer_id'";
+						$run_orders = $conn->query($get_orders);
+						$i = 0;
+						while($row_order = $run_orders->fetch_assoc()){
+							$id_order = $row_order['id_order'];
+							$amount = $row_order['amount'];
+							$invoice_no = $row_order['invoice_no'];
+							$quantity = $row_order['quantity'];
+							$order_date = substr($row_order['order_date'],0,11);
+							$i++;
+							$order_status = $row_order['order_status'];
+							if($order_status == 'pending'){
+								$order_status = "Unpaid";
+							}else{
+								$order_status = "Paid";
+							}
+					?>
+					<tr>
+						<th><?php echo $i; ?></th>
+						<td>Rp.<?php echo $amount; ?></td>
+						<td><?php echo $invoice_no; ?></td>
+						<td><?php echo $quantity; ?></td>
+						<td><?php echo $order_date; ?></td>
+						<td><?php echo $order_status; ?></td>
+						<td>
+							<a href="index?page=account&pay&id_order=<?php echo $id_order; ?>" class="btn btn-primary btn-sm">Confirm If Paid</a>
+						</td>
+					</tr>
+					<?php }
+					$conn->close();
+					?>
+				</tbody>
+			</table>
+		</div>
+		<?php
+	}
+	function loadpay($id) {
+		$conn = new mysqli($GLOBALS['servername'], $GLOBALS['username'], $GLOBALS['password'], $GLOBALS['dbname']);
+						$customer_id = $_SESSION['id'];
+						$get_orders = "select * from tbl_order where id_customer='$customer_id'";
+						$run_orders = $conn->query($get_orders);
+						while($row_order = $run_orders->fetch_assoc()){
+							$id_order = $row_order['id_order'];
+							$amount = $row_order['amount'];
+							$invoice_no = $row_order['invoice_no'];
+							$quantity = $row_order['quantity'];
+							$order_date = substr($row_order['order_date'],0,11);
+							$order_status = $row_order['order_status'];
+						}
+		?>
+		<h1 align="center">Please Confirm Your Payment</h1>
+                    <form action="index?page=processpay" method="post" enctype="multipart/form-data">
+                        <div class="form-group">
+                            <label>Invoice No:</label>
+                            <input type="text" class="form-control" name="invoice_no" value=<?php echo $invoice_no; ?> disabled>
+							<input type="hidden" name="idorder" value="<?php echo $id_order; ?>">
+                        </div>
+                        <div class="form-group">
+                            <label>Amount</label>
+                            <input type="text" class="form-control" name="ammount_sent" value=<?php echo $amount; ?> disabled>
+                        </div>
+                        <div class="form-group">
+                            <select name="payment_mode" class="form-control">
+                                <option>Select Payment Mode</option>
+                                <option>Bank</option>
+                                <option>Credit Card</option>
+                                <option>Paypal</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Transaction/Reference Id:</label>
+                            <input type="text" class="form-control" name="ref_no" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Payment Date:</label>
+                            <input type="text" class="form-control" name="date" required>
+                        </div>
+                        <div class="text-center">
+                            <button type="submit" name="confirm_payment" class="btn btn-primary btn-lg">
+                                <i class="fa fa-user-md"></i> Confirm Payment
+                            </button>
+                        </div>
+                    </form>
+					<?php
+	}
 	function loadaccount() {
 		?>
 		<div id="content">
@@ -1236,6 +1363,12 @@
                         loadeditaccount();
 						} else if(isset($_GET["changepass"])) {
 							loadchangepass();
+						} else if(isset($_GET["checkout"])) {
+							loadcheckout();
+						} else if(isset($_GET["order"])) {
+							loadorder();
+						} else if(isset($_GET["pay"])) {
+							loadpay($_GET["id_order"]);
 						}
                     ?>
                 </div>
